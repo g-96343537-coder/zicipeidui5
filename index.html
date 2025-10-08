@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>配对生字成词语练习</title>
+<style>
+  body {
+    font-family: "Microsoft YaHei", sans-serif;
+    background-color: #fdf6ec;
+    text-align: center;
+    padding: 20px;
+  }
+  h1 {
+    color: #ff914d;
+    font-size: 2em;
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  button {
+    background-color: #ffd966;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 1em;
+  }
+  button:hover {
+    background-color: #ffec99;
+  }
+
+  .match-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-top: 10px;
+  }
+
+  .match-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 60px;
+  }
+
+  .draggable {
+    width: 60px;
+    height: 60px;
+    line-height: 60px;
+    background-color: #fff8e1;
+    border: 2px solid #ffb84d;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 28px;
+    cursor: grab;
+    user-select: none;
+  }
+
+  .draggable.correct {
+    animation: flash 0.5s ease;
+    background-color: #d4edda;
+  }
+
+  @keyframes flash {
+    from { box-shadow: 0 0 10px 3px gold; }
+    to { box-shadow: none; }
+  }
+
+  .dropzone {
+    min-width: 180px;
+    height: 60px;
+    line-height: 60px;
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 26px;
+    background-color: #fff;
+  }
+
+  .score {
+    font-size: 1.2em;
+    color: #333;
+  }
+</style>
+</head>
+<body>
+
+<h1>配对生字成词语练习</h1>
+
+<div class="controls">
+  <div class="score" id="score">得分：0 / 10</div>
+  <div style="flex:1"></div>
+  <button id="prevBtn">上一页</button>
+  <div id="pageInfo">第 1 / 2 页</div>
+  <button id="nextBtn">下一页</button>
+  <button id="indepBtn">独立练习（新页面）</button>
+  <button id="backBtn" style="display:none;">返回分页</button>
+</div>
+
+<!-- 练习内容容器 -->
+<div id="exerciseContainer"></div>
+
+<audio id="ding" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_18e3c8b53a.mp3?filename=ding-36029.mp3"></audio>
+
+<script>
+const pages = [
+  [
+    {char:'爸', word:'我（　）妈妈'},
+    {char:'妈', word:'（　）爸'},
+    {char:'笑', word:'（　）着'},
+    {char:'着', word:'回（　）'},
+    {char:'回', word:'（　）哥'},
+  ],
+  [
+    {char:'哥', word:'（　）姐'},
+    {char:'姐', word:'（　）家'},
+    {char:'全', word:'一（　）星'},
+    {char:'家', word:'（　）间'},
+    {char:'的', word:'我（　）妈妈'},
+  ]
+];
+
+const independentSet = [
+  {char:'爸', word:'我（　）妈妈'},
+  {char:'妈', word:'（　）爸'},
+  {char:'笑', word:'（　）着'},
+  {char:'着', word:'回（　）'},
+  {char:'回', word:'（　）哥'},
+  {char:'哥', word:'（　）姐'},
+  {char:'姐', word:'（　）家'},
+  {char:'全', word:'一（　）星'},
+  {char:'家', word:'（　）间'},
+  {char:'的', word:'我（　）妈妈'},
+];
+
+let currentPage = 0;
+let score = 0;
+
+function createExercise(data){
+  const container = document.getElementById("exerciseContainer");
+  container.innerHTML = "";
+
+  const matchContainer = document.createElement("div");
+  matchContainer.className = "match-container";
+
+  data.forEach(item => {
+    const row = document.createElement("div");
+    row.className = "match-row";
+
+    const drag = document.createElement("div");
+    drag.className = "draggable";
+    drag.textContent = item.char;
+    drag.setAttribute("draggable", "true");
+    drag.addEventListener("click", ()=> speak(item.char));
+
+    const drop = document.createElement("div");
+    drop.className = "dropzone";
+    drop.textContent = item.word;
+
+    drag.addEventListener("dragstart", e=>{
+      e.dataTransfer.setData("text", item.char);
+    });
+
+    drop.addEventListener("dragover", e=>{
+      e.preventDefault();
+    });
+
+    drop.addEventListener("drop", e=>{
+      e.preventDefault();
+      const dragged = e.dataTransfer.getData("text");
+      if (dragged === item.char){
+        drop.innerHTML = item.word.replace("（　）", dragged);
+        drag.classList.add("correct");
+        document.getElementById("ding").play();
+        score++;
+        updateScore();
+      } else {
+        alert("再试一次！");
+      }
+    });
+
+    row.appendChild(drag);
+    row.appendChild(drop);
+    matchContainer.appendChild(row);
+  });
+
+  container.appendChild(matchContainer);
+}
+
+function updateScore(){
+  document.getElementById("score").textContent = `得分：${score} / 10`;
+}
+
+function speak(text){
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "zh-CN";
+  speechSynthesis.speak(utter);
+}
+
+// 页面切换
+document.getElementById("nextBtn").onclick = ()=>{
+  if(currentPage < pages.length - 1){
+    currentPage++;
+    createExercise(pages[currentPage]);
+    document.getElementById("pageInfo").textContent = `第 ${currentPage+1} / ${pages.length} 页`;
+  }
+};
+document.getElementById("prevBtn").onclick = ()=>{
+  if(currentPage > 0){
+    currentPage--;
+    createExercise(pages[currentPage]);
+    document.getElementById("pageInfo").textContent = `第 ${currentPage+1} / ${pages.length} 页`;
+  }
+};
+
+// 独立练习
+document.getElementById("indepBtn").onclick = ()=>{
+  document.getElementById("prevBtn").style.display="none";
+  document.getElementById("nextBtn").style.display="none";
+  document.getElementById("indepBtn").style.display="none";
+  document.getElementById("backBtn").style.display="inline-block";
+  document.getElementById("pageInfo").textContent = "独立练习";
+  createExercise(independentSet);
+};
+
+// 返回分页
+document.getElementById("backBtn").onclick = ()=>{
+  document.getElementById("prevBtn").style.display="inline-block";
+  document.getElementById("nextBtn").style.display="inline-block";
+  document.getElementById("indepBtn").style.display="inline-block";
+  document.getElementById("backBtn").style.display="none";
+  currentPage = 0;
+  document.getElementById("pageInfo").textContent = `第 1 / ${pages.length} 页`;
+  createExercise(pages[currentPage]);
+};
+
+// 初始化
+createExercise(pages[0]);
+</script>
+</body>
+</html>
