@@ -3,246 +3,268 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>配对生字成词语练习</title>
+<title>生字配对游戏（甜美动画版）</title>
 <style>
   body {
-    font-family: "Microsoft YaHei", sans-serif;
-    background-color: #fdf6ec;
-    text-align: center;
+    font-family: 'Microsoft YaHei', sans-serif;
+    margin: 0;
     padding: 20px;
-  }
-  h1 {
-    color: #ff914d;
-    font-size: 2em;
-  }
-
-  .controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    margin-bottom: 20px;
-  }
-  button {
-    background-color: #ffd966;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 16px;
-    cursor: pointer;
-    font-size: 1em;
-  }
-  button:hover {
-    background-color: #ffec99;
-  }
-
-  .match-container {
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 15px;
-    margin-top: 10px;
+    color: #d81b60;
+    background: linear-gradient(rgba(255,255,255,0.5), rgba(255,255,255,0.5)),
+                url('https://cdn.pixabay.com/photo/2017/08/30/00/18/background-2694032_1280.png') no-repeat center center;
+    background-size: cover;
+    transition: background 0.5s ease;
+    overflow-x: hidden;
   }
 
-  .match-row {
+  h1 { text-align: center; margin-top: 0; }
+  .score { font-size: 1.2rem; margin-top: 10px; color: #d81b60; z-index: 1; }
+  .game-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 90%;
+    max-width: 500px;
+    margin-top: 20px;
+    z-index: 1;
+  }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .word, .pair-box {
+    flex: 1;
+    height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 60px;
-  }
-
-  .draggable {
-    width: 60px;
-    height: 60px;
-    line-height: 60px;
-    background-color: #fff8e1;
-    border: 2px solid #ffb84d;
-    border-radius: 10px;
+    font-size: 1.5rem;
+    border-radius: 15px;
     text-align: center;
-    font-size: 28px;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+    z-index: 1;
+    transition: transform 0.3s ease;
+  }
+  .word {
+    background: #ffd1e8;
+    border: 2px solid #d81b60;
     cursor: grab;
-    user-select: none;
+  }
+  .word:active { transform: scale(1.1) rotate(-2deg); }
+
+  .pair-box {
+    border: 2px dashed #f48fb1;
+    background: #ffe4f1;
+    color: #000;
+    position: relative;
   }
 
-  .draggable.correct {
-    animation: flash 0.5s ease;
-    background-color: #d4edda;
+  /* 动画效果 */
+  .pair-box.flash { animation: flash 0.6s ease; }
+  .pair-box.correct {
+    background-color: #d81b60;
+    color: #fff;
+    border: 2px solid #880e4f;
+    animation: jump 0.5s;
+  }
+  .pair-box.wrong {
+    background-color: #f44336;
+    color: #fff;
+    border: 2px solid #b71c1c;
+    animation: shake 0.5s;
   }
 
   @keyframes flash {
-    from { box-shadow: 0 0 10px 3px gold; }
-    to { box-shadow: none; }
+    0% { box-shadow: 0 0 0px #fff; }
+    50% { box-shadow: 0 0 20px 10px #f48fb1; }
+    100% { box-shadow: 0 0 0px #fff; }
+  }
+  @keyframes jump {
+    0% { transform: translateY(0); }
+    30% { transform: translateY(-15px); }
+    60% { transform: translateY(0); }
+    100% { transform: translateY(-5px); }
+  }
+  @keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    50% { transform: translateX(8px); }
+    75% { transform: translateX(-8px); }
+    100% { transform: translateX(0); }
   }
 
-  .dropzone {
-    min-width: 180px;
-    height: 60px;
-    line-height: 60px;
-    border: 2px dashed #ccc;
-    border-radius: 10px;
-    text-align: center;
-    font-size: 26px;
-    background-color: #fff;
-  }
-
-  .score {
-    font-size: 1.2em;
-    color: #333;
+  button {
+    margin-top: 15px;
+    padding: 10px 25px;
+    border: none;
+    border-radius: 12px;
+    background-color: #d81b60;
+    color: #fff;
+    cursor: pointer;
+    font-size: 1rem;
   }
 </style>
 </head>
 <body>
-
-<h1>配对生字成词语练习</h1>
-
-<div class="controls">
-  <div class="score" id="score">得分：0 / 10</div>
-  <div style="flex:1"></div>
-  <button id="prevBtn">上一页</button>
-  <div id="pageInfo">第 1 / 2 页</div>
-  <button id="nextBtn">下一页</button>
-  <button id="indepBtn">独立练习（新页面）</button>
-  <button id="backBtn" style="display:none;">返回分页</button>
+<h1>生字配对成词语游戏</h1>
+<p>左边生字固定顺序，右边目标框随机排列。拖动正确显示绿色并跳跃动画，错误闪红抖动回原位。</p>
+<div class="score" id="score">完成：0 / 6</div>
+<div class="game-container" id="gameContainer"></div>
+<div>
+  <button id="prevBtn" onclick="prevPage()" disabled>上一页</button>
+  <button id="nextBtn" onclick="nextPage()">下一页</button>
+  <button onclick="resetGame()">重置</button>
 </div>
 
-<!-- 练习内容容器 -->
-<div id="exerciseContainer"></div>
-
-<audio id="ding" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_18e3c8b53a.mp3?filename=ding-36029.mp3"></audio>
-
 <script>
-const pages = [
-  [
-    {char:'爸', word:'我（　）妈妈'},
-    {char:'妈', word:'（　）爸'},
-    {char:'笑', word:'（　）着'},
-    {char:'着', word:'回（　）'},
-    {char:'回', word:'（　）哥'},
-  ],
-  [
-    {char:'哥', word:'（　）姐'},
-    {char:'姐', word:'（　）家'},
-    {char:'全', word:'一（　）星'},
-    {char:'家', word:'（　）间'},
-    {char:'的', word:'我（　）妈妈'},
-  ]
+const allData = [
+  {word: '故', pair: '事'}, 
+  {word: '练', pair: '习'}, 
+  {word: '朋', pair: '友'}, 
+  {word: '长', pair: '尺'}, 
+  {word: '知', pair: '识'}, 
+  {word: '不', pair: '会'}, 
+  {word: '出', pair: '去'}, 
+  {word: '课', pair: '室'}, 
+  {word: '操', pair: '场'}, 
+  {word: '回', pair: '家'}, 
+  {word: '跳', pair: '高'}, 
+  {word: '招', pair: '手'}
 ];
 
-const independentSet = [
-  {char:'爸', word:'我（　）妈妈'},
-  {char:'妈', word:'（　）爸'},
-  {char:'笑', word:'（　）着'},
-  {char:'着', word:'回（　）'},
-  {char:'回', word:'（　）哥'},
-  {char:'哥', word:'（　）姐'},
-  {char:'姐', word:'（　）家'},
-  {char:'全', word:'一（　）星'},
-  {char:'家', word:'（　）间'},
-  {char:'的', word:'我（　）妈妈'},
+const pageBackgrounds = [
+  'https://cdn.wallpapersafari.com/15/33/QxTK2b.jpg',
+  'https://cdn.wallpapersafari.com/15/33/QxTK2b.jpg'
 ];
 
 let currentPage = 0;
+const pageSize = 6;
 let score = 0;
 
-function createExercise(data){
-  const container = document.getElementById("exerciseContainer");
-  container.innerHTML = "";
-
-  const matchContainer = document.createElement("div");
-  matchContainer.className = "match-container";
-
-  data.forEach(item => {
-    const row = document.createElement("div");
-    row.className = "match-row";
-
-    const drag = document.createElement("div");
-    drag.className = "draggable";
-    drag.textContent = item.char;
-    drag.setAttribute("draggable", "true");
-    drag.addEventListener("click", ()=> speak(item.char));
-
-    const drop = document.createElement("div");
-    drop.className = "dropzone";
-    drop.textContent = item.word;
-
-    drag.addEventListener("dragstart", e=>{
-      e.dataTransfer.setData("text", item.char);
-    });
-
-    drop.addEventListener("dragover", e=>{
-      e.preventDefault();
-    });
-
-    drop.addEventListener("drop", e=>{
-      e.preventDefault();
-      const dragged = e.dataTransfer.getData("text");
-      if (dragged === item.char){
-        drop.innerHTML = item.word.replace("（　）", dragged);
-        drag.classList.add("correct");
-        document.getElementById("ding").play();
-        score++;
-        updateScore();
-      } else {
-        alert("再试一次！");
-      }
-    });
-
-    row.appendChild(drag);
-    row.appendChild(drop);
-    matchContainer.appendChild(row);
-  });
-
-  container.appendChild(matchContainer);
+function shuffle(arr) {
+  const array = [...arr];
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
 }
 
-function updateScore(){
-  document.getElementById("score").textContent = `得分：${score} / 10`;
+function renderPage() {
+  const container = document.getElementById('gameContainer');
+  container.innerHTML = '';
+  score = 0;
+  updateScore();
+
+  // 设置背景图片
+  document.body.style.background = `linear-gradient(rgba(255,255,255,0.5), rgba(255,255,255,0.5)), 
+                                    url(${pageBackgrounds[currentPage]}) no-repeat center center`;
+  document.body.style.backgroundSize = 'cover';
+
+  const start = currentPage * pageSize;
+  const end = Math.min(start + pageSize, allData.length);
+  const pageData = allData.slice(start, end);
+
+  for (let i = 0; i < pageData.length; i++) {
+    const row = document.createElement('div');
+    row.className = 'row';
+
+    const wordDiv = document.createElement('div');
+    wordDiv.className = 'word';
+    wordDiv.textContent = pageData[i].word;
+    wordDiv.draggable = true;
+    wordDiv.id = 'word-' + i;
+    wordDiv.ondragstart = drag;
+    row.appendChild(wordDiv);
+
+    container.appendChild(row);
+  }
+
+  const targets = shuffle(pageData);
+  const rows = container.querySelectorAll('.row');
+  for (let i = 0; i < targets.length; i++) {
+    const targetDiv = document.createElement('div');
+    targetDiv.className = 'pair-box';
+    targetDiv.dataset.word = targets[i].word;
+    targetDiv.dataset.pair = targets[i].pair;
+    targetDiv.dataset.full = targets[i].word + targets[i].pair;
+    targetDiv.textContent = targets[i].pair;
+    targetDiv.ondragover = allowDrop;
+    targetDiv.ondrop = drop;
+
+    rows[i].appendChild(targetDiv);
+  }
+
+  document.getElementById('prevBtn').disabled = currentPage === 0;
+  document.getElementById('nextBtn').disabled = end >= allData.length;
 }
 
-function speak(text){
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = "zh-CN";
-  speechSynthesis.speak(utter);
+function allowDrop(e) { e.preventDefault(); }
+function drag(e) { e.dataTransfer.setData('text', e.target.id); }
+
+function drop(e) {
+  e.preventDefault();
+  const dataId = e.dataTransfer.getData('text');
+  const dragged = document.getElementById(dataId);
+  const box = e.currentTarget;
+
+  if (!dragged) return;
+  if (box.querySelector('.word')) return;
+
+  if (dragged.textContent === box.dataset.word) {
+    box.textContent = box.dataset.full;
+    box.classList.add('correct', 'flash');
+    dragged.draggable = false;
+    dragged.style.display = 'none';
+    speakWord(box.dataset.full);
+    score++;
+    setTimeout(() => box.classList.remove('flash'), 600);
+  } else {
+    box.classList.add('wrong', 'flash');
+    setTimeout(() => {
+      box.classList.remove('wrong', 'flash');
+    }, 600);
+  }
+  updateScore();
 }
 
-// 页面切换
-document.getElementById("nextBtn").onclick = ()=>{
-  if(currentPage < pages.length - 1){
+function updateScore() {
+  const pageEnd = Math.min(pageSize, allData.length - currentPage * pageSize);
+  document.getElementById('score').textContent = `完成：${score} / ${pageEnd}`;
+}
+
+function nextPage() {
+  if ((currentPage + 1) * pageSize < allData.length) {
     currentPage++;
-    createExercise(pages[currentPage]);
-    document.getElementById("pageInfo").textContent = `第 ${currentPage+1} / ${pages.length} 页`;
+    renderPage();
   }
-};
-document.getElementById("prevBtn").onclick = ()=>{
-  if(currentPage > 0){
+}
+
+function prevPage() {
+  if (currentPage > 0) {
     currentPage--;
-    createExercise(pages[currentPage]);
-    document.getElementById("pageInfo").textContent = `第 ${currentPage+1} / ${pages.length} 页`;
+    renderPage();
   }
-};
+}
 
-// 独立练习
-document.getElementById("indepBtn").onclick = ()=>{
-  document.getElementById("prevBtn").style.display="none";
-  document.getElementById("nextBtn").style.display="none";
-  document.getElementById("indepBtn").style.display="none";
-  document.getElementById("backBtn").style.display="inline-block";
-  document.getElementById("pageInfo").textContent = "独立练习";
-  createExercise(independentSet);
-};
+function resetGame() {
+  renderPage();
+}
 
-// 返回分页
-document.getElementById("backBtn").onclick = ()=>{
-  document.getElementById("prevBtn").style.display="inline-block";
-  document.getElementById("nextBtn").style.display="inline-block";
-  document.getElementById("indepBtn").style.display="inline-block";
-  document.getElementById("backBtn").style.display="none";
-  currentPage = 0;
-  document.getElementById("pageInfo").textContent = `第 1 / ${pages.length} 页`;
-  createExercise(pages[currentPage]);
-};
+function speakWord(word) {
+  try {
+    const utter = new SpeechSynthesisUtterance(word);
+    utter.lang = 'zh-CN';
+    window.speechSynthesis.speak(utter);
+  } catch(e) { console.warn('语音播放失败', e); }
+}
 
-// 初始化
-createExercise(pages[0]);
+renderPage();
 </script>
 </body>
 </html>
